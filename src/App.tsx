@@ -1,13 +1,32 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import { useState, useEffect } from "react"
 import { useAuth } from "./hooks/useAuth"
 import AuthPage from "./pages/AuthPage"
 import HomePage from "./pages/HomePage"
 import BoutiquesPage from "./pages/BoutiquesPage"
 import BoutiquePage from "./pages/BoutiquePage"
 import VendeurPage from "./pages/VendeurPage"
+import CityModal from "./components/CityModal"
 
 function App() {
   const { user, loading, signOut } = useAuth()
+  const [villeChoisie, setVilleChoisie] = useState<string | null>(null)
+  const [showCityModal, setShowCityModal] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem("lesquare_ville")
+    if (saved) {
+      setVilleChoisie(saved)
+    } else {
+      setShowCityModal(true)
+    }
+  }, [])
+
+  const handleVilleSelect = (ville: string) => {
+    setVilleChoisie(ville)
+    localStorage.setItem("lesquare_ville", ville)
+    setShowCityModal(false)
+  }
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center"
@@ -19,18 +38,29 @@ function App() {
   )
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomePage user={user} onSignOut={signOut} />} />
-        <Route path="/connexion" element={user ? <Navigate to="/" /> : <AuthPage />} />
-        <Route path="/boutiques" element={<BoutiquesPage user={user} onSignOut={signOut} />} />
-        <Route path="/boutique/:id" element={<BoutiquePage user={user} onSignOut={signOut} />} />
-        <Route path="/vendeur" element={
-  user ? <VendeurPage user={user} onSignOut={signOut} /> : <Navigate to="/connexion" />
-} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </BrowserRouter>
+    <>
+      {showCityModal && <CityModal onSelect={handleVilleSelect} />}
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={
+            <HomePage user={user} onSignOut={signOut}
+              villeChoisie={villeChoisie}
+              onChangeVille={() => setShowCityModal(true)} />
+          } />
+          <Route path="/connexion" element={user ? <Navigate to="/" /> : <AuthPage />} />
+          <Route path="/boutiques" element={
+            <BoutiquesPage user={user} onSignOut={signOut}
+              villeChoisie={villeChoisie}
+              onChangeVille={() => setShowCityModal(true)} />
+          } />
+          <Route path="/boutique/:id" element={<BoutiquePage user={user} onSignOut={signOut} />} />
+          <Route path="/vendeur" element={
+            user ? <VendeurPage user={user} onSignOut={signOut} /> : <Navigate to="/connexion" />
+          } />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </BrowserRouter>
+    </>
   )
 }
 
