@@ -39,7 +39,12 @@ function App() {
 
   return (
     <>
-      {showCityModal && <CityModal onSelect={handleVilleSelect} />}
+      {showCityModal && (
+  <CityModal
+    onSelect={handleVilleSelect}
+    onClose={villeChoisie ? () => setShowCityModal(false) : undefined}
+  />
+)}
       <BrowserRouter>
         <Routes>
           <Route path="/" element={
