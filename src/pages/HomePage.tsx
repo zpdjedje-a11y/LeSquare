@@ -1,11 +1,13 @@
+import { useNavigate } from "react-router-dom"
 import type { User } from "@supabase/supabase-js"
 
 interface HomePageProps {
-  user: User
+  user: User | null
   onSignOut: () => void
 }
 
 export default function HomePage({ user, onSignOut }: HomePageProps) {
+  const navigate = useNavigate()
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#1A1A1A" }}>
 
@@ -14,16 +16,35 @@ export default function HomePage({ user, onSignOut }: HomePageProps) {
         <h1 className="font-playfair text-2xl font-black text-ambre">
           Le Square
         </h1>
-        <div className="flex items-center gap-3">
-  <span className="text-creme/70 text-sm">
-    {user.email}
-  </span>
-  <button
-    onClick={onSignOut}
-    className="bg-ambre text-noir font-bold px-4 py-2 rounded-xl text-sm hover:bg-or transition-colors"
-  >
-    Déconnexion
-  </button>
+      <div className="flex items-center gap-3">
+  {user ? (
+    <>
+      <span className="text-creme/70 text-sm hidden md:block">{user.email}</span>
+      <button
+        onClick={() => navigate("/vendeur")}
+        className="border border-ambre/40 text-ambre font-bold px-4 py-2 rounded-xl text-sm hover:border-ambre transition-colors">
+        Ma boutique
+      </button>
+      <button
+        onClick={onSignOut}
+        className="bg-ambre text-noir font-bold px-4 py-2 rounded-xl text-sm hover:bg-or transition-colors">
+        Déconnexion
+      </button>
+    </>
+  ) : (
+    <>
+      <button
+        onClick={() => navigate("/connexion")}
+        className="text-creme/70 text-sm hover:text-ambre transition-colors">
+        Connexion
+      </button>
+      <button
+        onClick={() => navigate("/connexion")}
+        className="bg-ambre text-noir font-bold px-4 py-2 rounded-xl text-sm hover:bg-or transition-colors">
+        S'inscrire
+      </button>
+    </>
+  )}
 </div>
       </header>
 
@@ -36,12 +57,16 @@ export default function HomePage({ user, onSignOut }: HomePageProps) {
           Achetez et vendez des produits de qualité. <span className="text-ambre">Le Square</span> : C'est propre, c'est pro, c'est nous !
         </p>
         <div className="flex gap-3 justify-center">
-          <button className="bg-ambre text-noir font-bold px-6 py-3 rounded-xl hover:bg-or transition-colors">
-            Explorer les boutiques
-          </button>
-          <button className="border border-ambre/40 text-ambre font-bold px-6 py-3 rounded-xl hover:border-ambre transition-colors">
-            Ouvrir ma boutique
-          </button>
+          <button
+  onClick={() => navigate("/boutiques")}
+  className="bg-ambre text-noir font-bold px-6 py-3 rounded-xl hover:bg-or transition-colors">
+  Explorer les boutiques
+</button>
+<button
+  onClick={() => navigate(user ? "/vendeur" : "/connexion")}
+  className="border border-ambre/40 text-ambre font-bold px-6 py-3 rounded-xl hover:border-ambre transition-colors">
+  Ouvrir ma boutique
+</button>
         </div>
       </section>
 
