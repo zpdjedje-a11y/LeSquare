@@ -51,7 +51,7 @@ export default function VendeurPage({ user, onSignOut }: VendeurPageProps) {
       .from("boutiques")
       .select("*")
       .eq("vendor_id", user!.id)
-      .single()
+      .maybeSingle()
 
     if (b) {
       setBoutique(b)
@@ -100,12 +100,12 @@ export default function VendeurPage({ user, onSignOut }: VendeurPageProps) {
       let logoPath = boutique?.logo_path || null
       let bannerPath = boutique?.banner_path || null
 
-      if (logoBoutique) {
-        logoPath = await uploadImage("boutiques", logoBoutique, `${user!.id}/logo`)
-      }
-      if (bannerBoutique) {
-        bannerPath = await uploadImage("boutiques", bannerBoutique, `${user!.id}/banner`)
-      }
+      // if (logoBoutique) {
+      //   logoPath = await uploadImage("boutiques", logoBoutique, `${user!.id}/logo`)
+      // }
+      // if (bannerBoutique) {
+      //   bannerPath = await uploadImage("boutiques", bannerBoutique, `${user!.id}/banner`)
+      // }
 
       if (boutique) {
         await supabase.from("boutiques").update({
@@ -131,9 +131,19 @@ export default function VendeurPage({ user, onSignOut }: VendeurPageProps) {
       }
 
       setSuccess("Boutique sauvegardée ✅")
-      await chargerDonnees()
+      
+      const { data: nouvelleBoutique } = await supabase
+        .from("boutiques")
+        .select("*")
+        .eq("vendor_id", user!.id)
+        .maybeSingle()
+
+      if (nouvelleBoutique) {
+        setBoutique(nouvelleBoutique)
+      }
     } catch (e: any) {
-      setError(e.message)
+      console.log("ERREUR:", e)
+setError(e.message)
     } finally {
       setSavingBoutique(false)
     }

@@ -6,6 +6,8 @@ import HomePage from "./pages/HomePage"
 import BoutiquesPage from "./pages/BoutiquesPage"
 import BoutiquePage from "./pages/BoutiquePage"
 import VendeurPage from "./pages/VendeurPage"
+import CommandePage from "./pages/CommandePage"
+import ConfirmationPage from "./pages/ConfirmationPage"
 import CityModal from "./components/CityModal"
 
 function App() {
@@ -59,6 +61,8 @@ function App() {
               onChangeVille={() => setShowCityModal(true)} />
           } />
           <Route path="/boutique/:id" element={<BoutiquePage user={user} onSignOut={signOut} />} />
+          <Route path="/commande" element={<CommandePage user={user} onSignOut={signOut} />} />
+<Route path="/confirmation" element={<ConfirmationPage user={user} onSignOut={signOut} />} />
           <Route path="/vendeur" element={
             user ? <VendeurPage user={user} onSignOut={signOut} /> : <Navigate to="/connexion" />
           } />
