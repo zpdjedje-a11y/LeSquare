@@ -1,4 +1,11 @@
-export default function HomePage() {
+import type { User } from "@supabase/supabase-js"
+
+interface HomePageProps {
+  user: User
+  onSignOut: () => void
+}
+
+export default function HomePage({ user, onSignOut }: HomePageProps) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#1A1A1A" }}>
 
@@ -8,13 +15,16 @@ export default function HomePage() {
           Le Square
         </h1>
         <div className="flex items-center gap-3">
-          <button className="text-creme/70 text-sm hover:text-ambre transition-colors">
-            Connexion
-          </button>
-          <button className="bg-ambre text-noir font-bold px-4 py-2 rounded-xl text-sm hover:bg-or transition-colors">
-            S'inscrire
-          </button>
-        </div>
+  <span className="text-creme/70 text-sm">
+    {user.email}
+  </span>
+  <button
+    onClick={onSignOut}
+    className="bg-ambre text-noir font-bold px-4 py-2 rounded-xl text-sm hover:bg-or transition-colors"
+  >
+    Déconnexion
+  </button>
+</div>
       </header>
 
       {/* Hero */}
