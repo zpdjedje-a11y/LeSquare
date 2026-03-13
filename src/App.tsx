@@ -8,6 +8,7 @@ import BoutiquePage from "./pages/BoutiquePage"
 import VendeurPage from "./pages/VendeurPage"
 import CommandePage from "./pages/CommandePage"
 import ConfirmationPage from "./pages/ConfirmationPage"
+import AdminPage from "./pages/AdminPage"
 import CityModal from "./components/CityModal"
 
 function App() {
@@ -66,7 +67,7 @@ function App() {
           <Route path="/vendeur" element={
             user ? <VendeurPage user={user} onSignOut={signOut} /> : <Navigate to="/connexion" />
           } />
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="/admin" element={<AdminPage user={user} onSignOut={signOut} />} />
         </Routes>
       </BrowserRouter>
     </>
