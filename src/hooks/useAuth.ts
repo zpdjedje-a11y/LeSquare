@@ -4,17 +4,31 @@ import type { User } from "@supabase/supabase-js"
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null)
+  const [role, setRole] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const chargerRole = async (u: User) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", u.id)
+      .maybeSingle()
+    setRole(data?.role || "client")
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
+      const u = session?.user ?? null
+      setUser(u)
+      if (u) chargerRole(u)
+      else setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null)
+      async (_event, session) => {
+        const u = session?.user ?? null
+        setUser(u)
+        if (u) await chargerRole(u)
         setLoading(false)
       }
     )
@@ -24,7 +38,8 @@ export const useAuth = () => {
 
   const signOut = async () => {
     await supabase.auth.signOut()
+    setRole(null)
   }
 
-  return { user, loading, signOut }
+  return { user, role, loading, signOut }
 }

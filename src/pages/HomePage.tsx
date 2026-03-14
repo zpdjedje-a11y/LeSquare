@@ -31,39 +31,41 @@ export default function HomePage({ user, onSignOut, villeChoisie, onChangeVille 
   ]
 
   useEffect(() => {
-    chargerProduits()
-  }, [villeChoisie, categorieActive])
+    const charger = async () => {
+      setLoading(true)
+      let query = supabase
+        .from("produits")
+        .select("*, boutiques(id, nom, ville)")
+        .eq("actif", true)
 
-  const chargerProduits = async () => {
-    setLoading(true)
-    let query = supabase
-      .from("produits")
-      .select("*, boutiques(id, nom, ville)")
-      .eq("actif", true)
+      if (categorieActive && categorieActive !== "Tous") {
+        query = query.eq("categorie", categorieActive)
+      }
 
-    if (categorieActive && categorieActive !== "Tous") {
-      query = query.eq("categorie", categorieActive)
+      const { data } = await query.order("created_at", { ascending: false })
+      setProduits(data || [])
+      setLoading(false)
     }
-
-    if (villeChoisie && villeChoisie !== "Toutes") {
-      query = query.eq("boutiques.ville", villeChoisie)
-    }
-
-    const { data } = await query.order("created_at", { ascending: false })
-    setProduits(data?.filter(p => p.boutiques) || [])
-    setLoading(false)
-  }
+    charger()
+  }, [categorieActive])
 
   const getImageUrl = (path: string) => {
     const { data } = supabase.storage.from("produits").getPublicUrl(path)
     return data.publicUrl
   }
 
-  const produitsFiltres = produits.filter(p =>
-    recherche === "" ||
-    p.nom.toLowerCase().includes(recherche.toLowerCase()) ||
-    p.boutiques?.nom.toLowerCase().includes(recherche.toLowerCase())
-  )
+  const produitsFiltres = produits.filter(p => {
+    const matchRecherche = recherche === "" ||
+      p.nom.toLowerCase().includes(recherche.toLowerCase()) ||
+      p.boutiques?.nom?.toLowerCase().includes(recherche.toLowerCase())
+
+    const matchVille = !villeChoisie ||
+      villeChoisie === "Toutes" ||
+      !p.boutiques?.ville ||
+      p.boutiques.ville.toLowerCase() === villeChoisie.toLowerCase()
+
+    return matchRecherche && matchVille
+  })
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#1A1A1A" }}>
@@ -176,7 +178,9 @@ export default function HomePage({ user, onSignOut, villeChoisie, onChangeVille 
                 <div className="h-40 flex items-center justify-center"
                   style={{ backgroundColor: "#2A2A2A" }}>
                   {p.image_path ? (
-                    <img src={getImageUrl(p.image_path)}
+                    <img
+                      src={getImageUrl(p.image_path)}
+                      alt={p.nom}
                       className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-4xl">🛍️</span>

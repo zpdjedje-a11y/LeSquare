@@ -12,7 +12,7 @@ import AdminPage from "./pages/AdminPage"
 import CityModal from "./components/CityModal"
 
 function App() {
-  const { user, loading, signOut } = useAuth()
+  const { user, role, loading, signOut } = useAuth()
   const [villeChoisie, setVilleChoisie] = useState<string | null>(null)
   const [showCityModal, setShowCityModal] = useState(false)
 
@@ -55,7 +55,13 @@ function App() {
               villeChoisie={villeChoisie}
               onChangeVille={() => setShowCityModal(true)} />
           } />
-          <Route path="/connexion" element={user ? <Navigate to="/" /> : <AuthPage />} />
+          <Route path="/connexion" element={
+            user
+              ? role === "vendeur"
+                ? <Navigate to="/vendeur" />
+                : <Navigate to="/" />
+              : <AuthPage />
+          } />
           <Route path="/boutiques" element={
             <BoutiquesPage user={user} onSignOut={signOut}
               villeChoisie={villeChoisie}
