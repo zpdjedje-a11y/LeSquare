@@ -12,11 +12,12 @@ interface VendeurPageProps {
 
 export default function VendeurPage({ user, onSignOut }: VendeurPageProps) {
   const navigate = useNavigate()
-  const [onglet, setOnglet] = useState<"boutique" | "produits" | "commandes">("boutique")
+  const [onglet, setOnglet] = useState<"boutique" | "produits" | "commandes" | "stats">("boutique")
   const [boutique, setBoutique] = useState<any>(null)
   const [produits, setProduits] = useState<any[]>([])
   const [commandes, setCommandes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({ totalVentes: 0, totalCommandes: 0, totalProduits: 0, commandesEnAttente: 0 })
 
   // Form boutique
   const [nomBoutique, setNomBoutique] = useState("")
@@ -74,6 +75,12 @@ export default function VendeurPage({ user, onSignOut }: VendeurPageProps) {
 
       setProduits(p || [])
       setCommandes(c || [])
+      setStats({
+        totalVentes: (c || []).reduce((sum: number, cmd: any) => sum + (cmd.total || 0), 0),
+        totalCommandes: (c || []).length,
+        totalProduits: (p || []).length,
+        commandesEnAttente: (c || []).filter((cmd: any) => cmd.statut === "en_attente").length,
+      })
     }
     setLoading(false)
   }
@@ -100,12 +107,12 @@ export default function VendeurPage({ user, onSignOut }: VendeurPageProps) {
       let logoPath = boutique?.logo_path || null
       let bannerPath = boutique?.banner_path || null
 
-      // if (logoBoutique) {
-      //   logoPath = await uploadImage("boutiques", logoBoutique, `${user!.id}/logo`)
-      // }
-      // if (bannerBoutique) {
-      //   bannerPath = await uploadImage("boutiques", bannerBoutique, `${user!.id}/banner`)
-      // }
+      if (logoBoutique) {
+        logoPath = await uploadImage("boutiques", logoBoutique, `${user!.id}/logo`)
+      }
+      if (bannerBoutique) {
+        bannerPath = await uploadImage("boutiques", bannerBoutique, `${user!.id}/banner`)
+      }
 
       if (boutique) {
         await supabase.from("boutiques").update({
@@ -131,19 +138,17 @@ export default function VendeurPage({ user, onSignOut }: VendeurPageProps) {
       }
 
       setSuccess("Boutique sauvegardée ✅")
-      
+
       const { data: nouvelleBoutique } = await supabase
         .from("boutiques")
         .select("*")
         .eq("vendor_id", user!.id)
         .maybeSingle()
 
-      if (nouvelleBoutique) {
-        setBoutique(nouvelleBoutique)
-      }
+      if (nouvelleBoutique) setBoutique(nouvelleBoutique)
+
     } catch (e: any) {
-      console.log("ERREUR:", e)
-setError(e.message)
+      setError(e.message)
     } finally {
       setSavingBoutique(false)
     }
@@ -204,16 +209,17 @@ setError(e.message)
         </h2>
 
         {/* Onglets */}
-        <div className="flex gap-2 mb-8 border-b border-ambre/20">
+        <div className="flex gap-2 mb-8 border-b border-ambre/20 overflow-x-auto">
           {[
             { key: "boutique", label: "🏪 Ma boutique" },
             { key: "produits", label: "📦 Mes produits" },
             { key: "commandes", label: "🛒 Commandes" },
+            { key: "stats", label: "📊 Stats" },
           ].map(o => (
             <button
               key={o.key}
               onClick={() => { setOnglet(o.key as any); setError(""); setSuccess("") }}
-              className={`px-4 py-3 text-sm font-bold transition-all border-b-2 -mb-px ${
+              className={`flex-shrink-0 px-4 py-3 text-sm font-bold transition-all border-b-2 -mb-px ${
                 onglet === o.key
                   ? "border-ambre text-ambre"
                   : "border-transparent text-creme/50 hover:text-creme"
@@ -234,15 +240,14 @@ setError(e.message)
               {boutique ? "Modifier ma boutique" : "Créer ma boutique"}
             </h3>
 
-            {/* Banner preview */}
             <div>
               <label className="block text-creme/70 text-sm mb-2">Bannière</label>
               <div className="h-32 rounded-xl overflow-hidden border border-ambre/20 flex items-center justify-center mb-2"
                 style={{ backgroundColor: "#2A2A2A" }}>
                 {bannerBoutique ? (
-                  <img src={URL.createObjectURL(bannerBoutique)} className="w-full h-full object-cover" />
+                  <img src={URL.createObjectURL(bannerBoutique)} alt="banner" className="w-full h-full object-cover" />
                 ) : boutique?.banner_path ? (
-                  <img src={getImageUrl("boutiques", boutique.banner_path)!} className="w-full h-full object-cover" />
+                  <img src={getImageUrl("boutiques", boutique.banner_path)!} alt="banner" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-creme/30 text-sm">Aucune bannière</span>
                 )}
@@ -252,15 +257,14 @@ setError(e.message)
                 className="text-creme/50 text-xs" />
             </div>
 
-            {/* Logo preview */}
             <div>
               <label className="block text-creme/70 text-sm mb-2">Logo</label>
               <div className="w-20 h-20 rounded-full overflow-hidden border border-ambre/20 flex items-center justify-center mb-2"
                 style={{ backgroundColor: "#2A2A2A" }}>
                 {logoBoutique ? (
-                  <img src={URL.createObjectURL(logoBoutique)} className="w-full h-full object-cover" />
+                  <img src={URL.createObjectURL(logoBoutique)} alt="logo" className="w-full h-full object-cover" />
                 ) : boutique?.logo_path ? (
-                  <img src={getImageUrl("boutiques", boutique.logo_path)!} className="w-full h-full object-cover" />
+                  <img src={getImageUrl("boutiques", boutique.logo_path)!} alt="logo" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-2xl">🏪</span>
                 )}
@@ -276,12 +280,13 @@ setError(e.message)
                 placeholder="Ex: Boutique Aminata"
                 className="w-full bg-noir border border-ambre/20 rounded-xl px-4 py-3 text-creme placeholder-creme/30 focus:outline-none focus:border-ambre text-sm" />
             </div>
+
             <div>
-  <label className="block text-creme/70 text-sm mb-1.5">Nom du vendeur *</label>
-  <input value={nomVendeur} onChange={e => setNomVendeur(e.target.value)}
-    placeholder="Ex: Aminata Koné"
-    className="w-full bg-noir border border-ambre/20 rounded-xl px-4 py-3 text-creme placeholder-creme/30 focus:outline-none focus:border-ambre text-sm" />
-</div>
+              <label className="block text-creme/70 text-sm mb-1.5">Nom du vendeur *</label>
+              <input value={nomVendeur} onChange={e => setNomVendeur(e.target.value)}
+                placeholder="Ex: Aminata Koné"
+                className="w-full bg-noir border border-ambre/20 rounded-xl px-4 py-3 text-creme placeholder-creme/30 focus:outline-none focus:border-ambre text-sm" />
+            </div>
 
             <div>
               <label className="block text-creme/70 text-sm mb-1.5">Description</label>
@@ -293,9 +298,9 @@ setError(e.message)
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-  <label className="block text-creme/70 text-sm mb-1.5">Ville</label>
-  <CitySearch value={villeBoutique} onChange={setVilleBoutique} />
-</div>
+                <label className="block text-creme/70 text-sm mb-1.5">Ville</label>
+                <CitySearch value={villeBoutique} onChange={setVilleBoutique} />
+              </div>
               <div>
                 <label className="block text-creme/70 text-sm mb-1.5">Catégorie</label>
                 <select value={categorieBoutique} onChange={e => setCategorieBoutique(e.target.value)}
@@ -319,10 +324,20 @@ setError(e.message)
             </button>
 
             {boutique && (
-              <button onClick={() => navigate(`/boutique/${boutique.id}`)}
-                className="w-full border border-ambre/40 text-ambre font-bold py-3 rounded-xl hover:border-ambre transition-all text-sm">
-                Voir ma boutique →
-              </button>
+              <div className="flex gap-3">
+                <button onClick={() => navigate(`/boutique/${boutique.id}`)}
+                  className="flex-1 border border-ambre/40 text-ambre font-bold py-3 rounded-xl hover:border-ambre transition-all text-sm">
+                  Voir ma boutique →
+                </button>
+                <button onClick={() => {
+                  const url = `${window.location.origin}/boutique/${boutique.id}`
+                  navigator.clipboard.writeText(url)
+                  setSuccess("Lien copié ! ✅")
+                }}
+                  className="flex-1 border border-ambre/40 text-ambre font-bold py-3 rounded-xl hover:border-ambre transition-all text-sm">
+                  📋 Copier le lien
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -349,7 +364,6 @@ setError(e.message)
                   </button>
                 </div>
 
-                {/* Formulaire ajout produit */}
                 {showAddProduit && (
                   <div className="bg-gris rounded-2xl p-6 border border-ambre/20 mb-6 space-y-4">
                     <h3 className="font-playfair text-xl font-bold text-creme">Nouveau produit</h3>
@@ -359,7 +373,7 @@ setError(e.message)
                       <div className="h-40 rounded-xl overflow-hidden border border-ambre/20 flex items-center justify-center mb-2"
                         style={{ backgroundColor: "#2A2A2A" }}>
                         {imageProduit ? (
-                          <img src={URL.createObjectURL(imageProduit)} className="w-full h-full object-cover" />
+                          <img src={URL.createObjectURL(imageProduit)} alt="produit" className="w-full h-full object-cover" />
                         ) : (
                           <span className="text-4xl">📷</span>
                         )}
@@ -428,7 +442,6 @@ setError(e.message)
                   </div>
                 )}
 
-                {/* Liste produits */}
                 {produits.length === 0 ? (
                   <div className="text-center py-16">
                     <p className="text-5xl mb-4">📦</p>
@@ -437,22 +450,17 @@ setError(e.message)
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {produits.map(p => (
-                      <div key={p.id}
-                        className="bg-gris border border-ambre/10 rounded-2xl overflow-hidden">
-                        <div className="h-36 flex items-center justify-center"
-                          style={{ backgroundColor: "#2A2A2A" }}>
+                      <div key={p.id} className="bg-gris border border-ambre/10 rounded-2xl overflow-hidden">
+                        <div className="h-36 flex items-center justify-center" style={{ backgroundColor: "#2A2A2A" }}>
                           {p.image_path ? (
-                            <img src={getImageUrl("produits", p.image_path)!}
-                              className="w-full h-full object-cover" />
+                            <img src={getImageUrl("produits", p.image_path)!} alt={p.nom} className="w-full h-full object-cover" />
                           ) : (
                             <span className="text-3xl">🛍️</span>
                           )}
                         </div>
                         <div className="p-3">
                           <p className="text-creme text-sm font-medium mb-1 truncate">{p.nom}</p>
-                          <p className="text-ambre font-bold text-sm mb-1">
-                            {p.prix.toLocaleString("fr-FR")} FCFA
-                          </p>
+                          <p className="text-ambre font-bold text-sm mb-1">{p.prix.toLocaleString("fr-FR")} FCFA</p>
                           <p className="text-creme/40 text-xs mb-2">Stock: {p.stock}</p>
                           <button onClick={() => supprimerProduit(p.id)}
                             className="w-full border border-red-400/30 text-red-400 text-xs py-1.5 rounded-lg hover:border-red-400/60 transition-colors">
@@ -479,12 +487,9 @@ setError(e.message)
             ) : (
               <div className="space-y-4">
                 {commandes.map(c => (
-                  <div key={c.id}
-                    className="bg-gris border border-ambre/10 rounded-2xl p-4">
+                  <div key={c.id} className="bg-gris border border-ambre/10 rounded-2xl p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-creme font-bold text-sm">
-                        #{c.id.slice(0, 8).toUpperCase()}
-                      </p>
+                      <p className="text-creme font-bold text-sm">#{c.id.slice(0, 8).toUpperCase()}</p>
                       <span className={`text-xs font-bold px-2 py-1 rounded-full ${
                         c.statut === "livree" ? "bg-green-400/20 text-green-400" :
                         c.statut === "en_cours" ? "bg-blue-400/20 text-blue-400" :
@@ -494,15 +499,43 @@ setError(e.message)
                       </span>
                     </div>
                     <p className="text-creme/60 text-sm">{c.nom_client} — {c.telephone_client}</p>
-                    <p className="text-ambre font-bold text-sm mt-1">
-                      {c.total.toLocaleString("fr-FR")} FCFA
-                    </p>
+                    <p className="text-ambre font-bold text-sm mt-1">{c.total.toLocaleString("fr-FR")} FCFA</p>
                   </div>
                 ))}
               </div>
             )}
           </div>
         )}
+
+        {/* ONGLET STATS */}
+        {onglet === "stats" && (
+          <div>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              {[
+                { label: "Total ventes", value: `${stats.totalVentes.toLocaleString("fr-FR")} FCFA`, emoji: "💰" },
+                { label: "Commandes", value: stats.totalCommandes, emoji: "🛒" },
+                { label: "Produits", value: stats.totalProduits, emoji: "📦" },
+                { label: "En attente", value: stats.commandesEnAttente, emoji: "⏳" },
+              ].map(s => (
+                <div key={s.label} className="bg-gris border border-ambre/10 rounded-2xl p-5 text-center">
+                  <p className="text-3xl mb-2">{s.emoji}</p>
+                  <p className="font-playfair text-2xl font-black text-ambre">{s.value}</p>
+                  <p className="text-creme/50 text-xs mt-1">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {boutique && (
+              <div className="bg-gris border border-ambre/10 rounded-2xl p-4">
+                <p className="text-creme font-bold mb-2">📍 Ma boutique</p>
+                <p className="text-creme/60 text-sm">Ville : {boutique.ville}</p>
+                <p className="text-creme/60 text-sm">Catégorie : {boutique.categorie || "Non définie"}</p>
+                <p className="text-creme/60 text-sm">Statut : {boutique.actif ? "✅ Active" : "❌ Inactive"}</p>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   )
